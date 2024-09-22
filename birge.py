@@ -11,6 +11,9 @@ options = ChromeOptions()
 options.add_argument("--headless=new")
 driver = webdriver.Chrome(options=options)
 
+# driver = webdriver.Chrome()
+
+
 # Открытие сайта
 driver.get('https://moscow.birge.ru/')
 
@@ -24,6 +27,9 @@ WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, '//inp
 driver.get('https://moscow.birge.ru/personal/my_ads/')
 # WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, '//a[text()="Мой кабинет"]'))).click()
 
+attempts = 0  # Счётчик попыток
+max_attempts = 5  # Максимальное количество попыток
+
 # Поиск и нажатие кнопок "Поднять объявление"
 while True:
     try:
@@ -33,11 +39,16 @@ while True:
         for button in buttons:
             button.click()
             print('Объявление поднято!')
-        # button.click()
+        break
         # time.sleep(4 * 60 * 60)  # Пауза в 4 часа
-    except:
+    except Exception as e:
+        # Если кнопки не найдены или возникла ошибка
+        print(f'Ошибка: {e}')
         print('Кнопка "Поднять объявление" не найдена')
-        # driver.refresh()
+        attempts += 1
+        if attempts >= max_attempts:
+            print('Достигнуто максимальное количество попыток, выходим из цикла.')
+            break  # Выходим из цикла после нескольких неудачных попыток
 
 # Закрытие браузера
 driver.quit()
