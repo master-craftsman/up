@@ -34,10 +34,10 @@ while True:
             button.click()
             print('Объявление поднято!')
         # button.click()
-        time.sleep(4 * 60 * 60)  # Пауза в 4 часа
+        # time.sleep(4 * 60 * 60)  # Пауза в 4 часа
     except:
-        print('Кнопка "Поднять объявление" не найдена. Производится перезагрузка страницы...')
-        driver.refresh()
+        print('Кнопка "Поднять объявление" не найдена')
+        # driver.refresh()
 
 # Закрытие браузера
 driver.quit()
