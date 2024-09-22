@@ -21,7 +21,8 @@ pass_birge = os.getenv('PASS_BIRGE')
 WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, '//input[@placeholder="Логин/Email" and @class="login"]'))).send_keys(email_birge)
 WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, '//input[@placeholder="Пароль" and @class="pass"]'))).send_keys(pass_birge)
 WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, '//input[@value="Войти" and @class="submit"]'))).click()
-WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, '//a[text()="Мой кабинет"]'))).click()
+driver.get('https://moscow.birge.ru/personal/my_ads/')
+# WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, '//a[text()="Мой кабинет"]'))).click()
 
 # Поиск и нажатие кнопок "Поднять объявление"
 while True:
