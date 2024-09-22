@@ -14,8 +14,8 @@ driver = webdriver.Chrome(options=options)
 # Открытие сайта
 driver.get('https://moscow.birge.ru/')
 
-email_birge = os.getenv('email_birge')
-pass_birge = os.getenv('pass_birge')
+email_birge = os.getenv('EMAIL_BIRGE')
+pass_birge = os.getenv('PASS_BIRGE')
 
 # Вход на сайт (если требуется)
 WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, '//input[@placeholder="Логин/Email" and @class="login"]'))).send_keys(email_birge)
