@@ -1,0 +1,34 @@
+name: Run Python Scripts Every 4 Hours
+
+# Определяем триггер для запуска воркфлоу каждые 4 часа
+on:
+  schedule:
+    - cron: "0 */4 * * *"  # каждые 4 часа
+
+jobs:
+  run-scripts:
+    runs-on: ubuntu-latest  # Используем виртуальную машину Ubuntu
+
+    steps:
+    # Проверяем репозиторий с кодом
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Устанавливаем Python
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'  # Укажи нужную версию Python
+
+    # Устанавливаем зависимости (если есть файл requirements.txt)
+    - name: Install dependencies
+      run: |
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    # Запуск первого Python скрипта
+    - name: Run first Python script
+      run: python script1.py
+
+    # Запуск второго Python скрипта
+    - name: Run second Python script
+      run: python script2.py
