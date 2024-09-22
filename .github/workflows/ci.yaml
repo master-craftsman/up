@@ -29,6 +29,9 @@ jobs:
     # Запуск первого Python скрипта
     - name: Run first Python script
       run: python birge.py
+      env:
+        EMAIL_BIRGE: ${{ secrets.EMAIL_BIRGE }}
+        PASS_BIRGE: ${{ secrets.PASS_BIRGE }}
 
     # # Запуск второго Python скрипта
     # - name: Run second Python script
