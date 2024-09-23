@@ -2,9 +2,9 @@ name: Run Python Scripts Every 4 Hours
 
 # Определяем триггер для запуска воркфлоу каждые 4 часа
 on:
-  workflow_dispatch:
-  # schedule:
-  #   - cron: "0 */4 * * *"  # каждые 4 часа
+  # workflow_dispatch:
+  schedule:
+    - cron: "0 */4 * * *"  # каждые 4 часа
 
 jobs:
   run-scripts:
