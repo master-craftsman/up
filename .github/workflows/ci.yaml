@@ -1,4 +1,4 @@
-name: Run Python Scripts Every 4 Hours
+name: Run Python Scripts and Record Video
 
 on:
   workflow_dispatch:
@@ -26,23 +26,39 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y google-chrome-stable
 
+    # Устанавливаем ffmpeg для записи видео
+    - name: Install ffmpeg
+      run: sudo apt-get install -y ffmpeg
+
     # Устанавливаем зависимости (если есть файл requirements.txt)
     - name: Install dependencies
       run: |
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install selenium
-        pip install webdriver-manager  # Установка webdriver-manager
+        pip install webdriver-manager
 
-    # Запуск первого Python скрипта с Selenium
-    - name: Run first Python script
+    # Запускаем ffmpeg для записи экрана
+    - name: Start screen recording
+      run: |
+        ffmpeg -y -video_size 1920x1080 -framerate 25 -f x11grab -i :99.0 -c:v libx264 -pix_fmt yuv420p screen_record.mp4 &
+      env:
+        DISPLAY: :99  # Используем виртуальный дисплей для захвата
+
+    # Запуск Python скрипта с Selenium
+    - name: Run Python script
       run: python birge.py
       env:
         EMAIL_BIRGE: ${{ secrets.EMAIL_BIRGE }}
         PASS_BIRGE: ${{ secrets.PASS_BIRGE }}
 
-    # Добавляем шаг для загрузки скриншота как артефакта
-    - name: Upload screenshot
+    # Останавливаем запись после выполнения скрипта
+    - name: Stop recording
+      run: |
+        pkill ffmpeg
+
+    # Загружаем видео как артефакт
+    - name: Upload video
       uses: actions/upload-artifact@v3
       with:
-        name: screenshot
-        path: screenshot.png
+        name: screen_record
+        path: screen_record.mp4
