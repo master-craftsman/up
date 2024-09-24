@@ -10,11 +10,13 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 
 # Установка пути к драйверу браузера (например, Chrome)
 options = ChromeOptions()
-# options.add_argument("--headless=new")
+options.add_argument("--headless=new")  # Оставляем headless режим
+options.add_argument("--disable-dev-shm-usage")  # Уменьшаем использование /dev/shm, чтобы избежать ошибок с нехваткой памяти
+options.add_argument("--no-sandbox")  # Отключаем режим песочницы, чтобы предотвратить ошибки безопасности
+options.add_argument("--disable-gpu")  # Отключаем использование GPU, так как это не нужно в headless-режиме
+options.add_argument("--remote-debugging-port=9222")  # Добавляем порт для удалённой отладки
+options.add_argument("--window-size=1920,1080")  # Увеличиваем размер окна для отображения всех элементов
 options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3")
-options.add_argument("--window-size=1920,1080")
-options.add_argument("--no-sandbox")
-options.add_argument("--disable-dev-shm-usage")
 
 # Использование webdriver-manager для автоматической установки драйвера
 driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
