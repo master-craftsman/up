@@ -31,9 +31,9 @@ email_birge = os.getenv('EMAIL_BIRGE')
 pass_birge = os.getenv('PASS_BIRGE')
 
 # Вход на сайт (если требуется)
-WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, '//input[@placeholder="Логин/Email" and @class="login"]'))).send_keys(email_birge)
-WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, '//input[@placeholder="Пароль" and @class="pass"]'))).send_keys(pass_birge)
-WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, '//input[@value="Войти" and @class="submit"]'))).click()
+WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, '//input[@placeholder="Логин/Email" and @class="login"]'))).send_keys(email_birge)
+WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, '//input[@placeholder="Пароль" and @class="pass"]'))).send_keys(pass_birge)
+WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, '//input[@value="Войти" and @class="submit"]'))).click()
 driver.get('https://moscow.birge.ru/personal/my_ads/')
 # WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, '//a[text()="Мой кабинет"]'))).click()
 
@@ -43,7 +43,7 @@ max_attempts = 5  # Максимальное количество попыток
 # Поиск и нажатие кнопок "Поднять объявление"
 while True:
     try:
-        buttons = WebDriverWait(driver, 30).until(
+        buttons = WebDriverWait(driver, 60).until(
             EC.presence_of_all_elements_located((By.XPATH, '//i[@class="fa fa-refresh reload-link"]'))
         )
         for button in buttons:
