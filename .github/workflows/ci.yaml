@@ -40,6 +40,9 @@ jobs:
         EMAIL_BIRGE: ${{ secrets.EMAIL_BIRGE }}
         PASS_BIRGE: ${{ secrets.PASS_BIRGE }}
 
-    # # Запуск второго Python скрипта
-    # - name: Run second Python script
-    #   run: python script2.py
+    # Добавляем шаг для загрузки скриншота как артефакта
+    - name: Upload screenshot
+      uses: actions/upload-artifact@v3
+      with:
+        name: screenshot
+        path: screenshot.png
