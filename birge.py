@@ -61,6 +61,5 @@ while True:
             break  # Выходим из цикла после нескольких неудачных попыток
 
 driver.save_screenshot('screenshot.png')
-print(driver.page_source)
 # Закрытие браузера
 driver.quit()
