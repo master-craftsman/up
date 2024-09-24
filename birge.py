@@ -9,6 +9,8 @@ import os
 # Установка пути к драйверу браузера (например, Chrome)
 options = ChromeOptions()
 options.add_argument("--headless=new")
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
 driver = webdriver.Chrome(options=options)
 
 # driver = webdriver.Chrome()
