@@ -7,11 +7,11 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 import os
 
 # Установка пути к драйверу браузера (например, Chrome)
-options = ChromeOptions()
-options.add_argument("--headless=new")
-driver = webdriver.Chrome(options=options)
+# options = ChromeOptions()
+# options.add_argument("--headless=new")
+# driver = webdriver.Chrome(options=options)
 
-# driver = webdriver.Chrome()
+driver = webdriver.Chrome()
 
 
 # Открытие сайта
