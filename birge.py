@@ -10,7 +10,9 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 
 # Установка пути к драйверу браузера (например, Chrome)
 options = ChromeOptions()
-options.add_argument("--headless=new")
+# options.add_argument("--headless=new")
+options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3")
+options.add_argument("--window-size=1920,1080")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
 
@@ -39,7 +41,7 @@ max_attempts = 5  # Максимальное количество попыток
 # Поиск и нажатие кнопок "Поднять объявление"
 while True:
     try:
-        buttons = WebDriverWait(driver, 10).until(
+        buttons = WebDriverWait(driver, 30).until(
             EC.presence_of_all_elements_located((By.XPATH, '//i[@class="fa fa-refresh reload-link"]'))
         )
         for button in buttons:
@@ -56,5 +58,7 @@ while True:
             print('Достигнуто максимальное количество попыток, выходим из цикла.')
             break  # Выходим из цикла после нескольких неудачных попыток
 
+driver.save_screenshot('screenshot.png')
+print(driver.page_source)
 # Закрытие браузера
 driver.quit()
