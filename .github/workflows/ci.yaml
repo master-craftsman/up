@@ -20,25 +20,12 @@ jobs:
       with:
         python-version: '3.11.0'
 
-    # Устанавливаем конкретную версию Chrome (в данном случае v128)
-    - name: Install Chrome v128
-      run: |
-        wget https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_128.0.6613.137-1_amd64.deb
-        sudo apt install ./google-chrome-stable_128.0.6613.137-1_amd64.deb
-
-    # Устанавливаем ChromeDriver для версии 128
-    - name: Install ChromeDriver v128
-      run: |
-        wget https://chromedriver.storage.googleapis.com/128.0.6613.137/chromedriver_linux64.zip
-        unzip chromedriver_linux64.zip
-        sudo mv chromedriver /usr/local/bin/
-        sudo chmod +x /usr/local/bin/chromedriver
-
     # Устанавливаем зависимости (если есть файл requirements.txt)
     - name: Install dependencies
       run: |
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install selenium
+        pip install webdriver-manager  # Установка webdriver-manager
 
     # Запуск первого Python скрипта с Selenium
     - name: Run first Python script
