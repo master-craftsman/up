@@ -42,12 +42,13 @@ jobs:
     - name: Start Xvfb
       run: |
         Xvfb :99 -screen 0 1920x1080x24 &
+        export DISPLAY=:99  # Убедитесь, что DISPLAY установлен
         echo "Xvfb started"
 
     # Запускаем ffmpeg для записи экрана
     - name: Start screen recording
       run: |
-        ffmpeg -y -video_size 1920x1080 -framerate 25 -f x11grab -i :99.0 -c:v libx264 -pix_fmt yuv420p screen_record.mp4 &
+        ffmpeg -y -video_size 1920x1080 -framerate 25 -f x11grab -i :99.0 -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency screen_record.mp4 &
       env:
         DISPLAY: :99  # Используем виртуальный дисплей для захвата
 
