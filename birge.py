@@ -10,7 +10,7 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 
 # Установка пути к драйверу браузера (например, Chrome)
 options = ChromeOptions()
-options.add_argument("--headless=new")  # Оставляем headless режим
+options.add_argument("--headless")  # Оставляем headless режим
 options.add_argument("--disable-dev-shm-usage")  # Уменьшаем использование /dev/shm, чтобы избежать ошибок с нехваткой памяти
 options.add_argument("--no-sandbox")  # Отключаем режим песочницы, чтобы предотвратить ошибки безопасности
 options.add_argument("--disable-gpu")  # Отключаем использование GPU, так как это не нужно в headless-режиме
