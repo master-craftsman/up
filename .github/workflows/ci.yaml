@@ -3,7 +3,7 @@ name: Run Python Scripts Every 4 Hours
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */4 * * *"  # Раскомментировано: Запуск каждые 4 часа
+    - cron: "0 */4 * * *"  # Запуск каждые 4 часа
 
 jobs:
   run-scripts:
@@ -18,23 +18,27 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11.0'  # Укажи нужную версию Python
+        python-version: '3.11.0'
+
+    # Устанавливаем конкретную версию Chrome (в данном случае v128)
+    - name: Install Chrome v128
+      run: |
+        wget https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_128.0.6613.137-1_amd64.deb
+        sudo apt install ./google-chrome-stable_128.0.6613.137-1_amd64.deb
+
+    # Устанавливаем ChromeDriver для версии 128
+    - name: Install ChromeDriver v128
+      run: |
+        wget https://chromedriver.storage.googleapis.com/128.0.6613.137/chromedriver_linux64.zip
+        unzip chromedriver_linux64.zip
+        sudo mv chromedriver /usr/local/bin/
+        sudo chmod +x /usr/local/bin/chromedriver
 
     # Устанавливаем зависимости (если есть файл requirements.txt)
     - name: Install dependencies
       run: |
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        pip install selenium  # Устанавливаем selenium
-
-    # Устанавливаем Chrome
-    - name: Install Chrome
-      run: sudo apt-get install -y google-chrome-stable
-
-    # Устанавливаем ChromeDriver
-    - name: Install ChromeDriver
-      run: |
-        sudo apt-get install -y chromium-chromedriver
-        sudo ln -s /usr/lib/chromium-browser/chromedriver /usr/local/bin/chromedriver
+        pip install selenium
 
     # Запуск первого Python скрипта с Selenium
     - name: Run first Python script
@@ -42,11 +46,6 @@ jobs:
       env:
         EMAIL_BIRGE: ${{ secrets.EMAIL_BIRGE }}
         PASS_BIRGE: ${{ secrets.PASS_BIRGE }}
-
-      # Дополнительные аргументы для headless режима и избегания проблем с правами доступа
-      # Убедитесь, что они добавлены в Python код:
-      # options.add_argument("--no-sandbox")
-      # options.add_argument("--disable-dev-shm-usage")
 
     # # Запуск второго Python скрипта
     # - name: Run second Python script
