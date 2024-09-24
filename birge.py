@@ -43,7 +43,7 @@ while True:
             EC.presence_of_all_elements_located((By.XPATH, '//i[@class="fa fa-refresh reload-link"]'))
         )
         for button in buttons:
-            button.click()
+            # button.click()
             print('Объявление поднято!')
         break
         # time.sleep(4 * 60 * 60)  # Пауза в 4 часа
