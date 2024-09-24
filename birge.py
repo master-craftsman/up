@@ -3,15 +3,19 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options as ChromeOptions
 import os
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options as ChromeOptions
 
 # Установка пути к драйверу браузера (например, Chrome)
 options = ChromeOptions()
 options.add_argument("--headless=new")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
-driver = webdriver.Chrome(options=options)
+
+# Использование webdriver-manager для автоматической установки драйвера
+driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
 
 # driver = webdriver.Chrome()
 
