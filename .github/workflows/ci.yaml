@@ -1,14 +1,13 @@
 name: Run Python Scripts Every 4 Hours
 
-# Определяем триггер для запуска воркфлоу каждые 4 часа
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: "0 */4 * * *"  # каждые 4 часа
+  schedule:
+    - cron: "0 */4 * * *"  # Раскомментировано: Запуск каждые 4 часа
 
 jobs:
   run-scripts:
-    runs-on: ubuntu-latest  # Используем виртуальную машину Ubuntu
+    runs-on: ubuntu-latest
 
     steps:
     # Проверяем репозиторий с кодом
@@ -25,13 +24,29 @@ jobs:
     - name: Install dependencies
       run: |
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install selenium  # Устанавливаем selenium
 
-    # Запуск первого Python скрипта
+    # Устанавливаем Chrome
+    - name: Install Chrome
+      run: sudo apt-get install -y google-chrome-stable
+
+    # Устанавливаем ChromeDriver
+    - name: Install ChromeDriver
+      run: |
+        sudo apt-get install -y chromium-chromedriver
+        sudo ln -s /usr/lib/chromium-browser/chromedriver /usr/local/bin/chromedriver
+
+    # Запуск первого Python скрипта с Selenium
     - name: Run first Python script
       run: python birge.py
       env:
         EMAIL_BIRGE: ${{ secrets.EMAIL_BIRGE }}
         PASS_BIRGE: ${{ secrets.PASS_BIRGE }}
+
+      # Дополнительные аргументы для headless режима и избегания проблем с правами доступа
+      # Убедитесь, что они добавлены в Python код:
+      # options.add_argument("--no-sandbox")
+      # options.add_argument("--disable-dev-shm-usage")
 
     # # Запуск второго Python скрипта
     # - name: Run second Python script
