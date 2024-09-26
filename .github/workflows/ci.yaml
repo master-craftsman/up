@@ -31,40 +31,46 @@ jobs:
       run: |
         sudo apt-get install -y xvfb ffmpeg
 
-    # Устанавливаем зависимости (если есть файл requirements.txt)
+    # Устанавливает зависимости (если есть файл requirements.txt)
     - name: Install dependencies
       run: |
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install selenium
         pip install webdriver-manager
 
+    # Установить переменные окружения
+    - name: Set up environment variables
+      run: |
+        export DISPLAY=:99
+
     # Запускаем Xvfb
     - name: Start Xvfb
+      env:
+        DISPLAY: :99  # Используем виртуальный дисплей для захвата
       run: |
         Xvfb :99 -screen 0 1920x1080x24 &
-        export DISPLAY=:99  # Убедитесь, что DISPLAY установлен
         echo "Xvfb started"
 
     # Запускаем ffmpeg для записи экрана
     - name: Start screen recording
-      run: |
-        ffmpeg -y -video_size 1920x1080 -framerate 25 -f x11grab -i :99.0 -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency screen_record.mp4 &
       env:
         DISPLAY: :99  # Используем виртуальный дисплей для захвата
+      run: |
+        ffmpeg -y -video_size 1920x1080 -framerate 25 -f x11grab -i :99.0 -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency screen_record.mp4 &
 
     # Запуск Python скрипта с Selenium
     - name: Run Python script
-      run: python birge.py
       env:
         EMAIL_BIRGE: ${{ secrets.EMAIL_BIRGE }}
         PASS_BIRGE: ${{ secrets.PASS_BIRGE }}
+      run: python birge.py
 
-    # Останавливаем запись после выполнения скрипта
+    # Останавливает запись после выполнения скрипта
     - name: Stop recording
       run: |
         pkill ffmpeg
 
-    # Загружаем видео как артефакт
+    # Загружает видео как артефакт
     - name: Upload video
       uses: actions/upload-artifact@v3
       with:
