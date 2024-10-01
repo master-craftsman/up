@@ -1,4 +1,4 @@
-name: Run Python Scripts and Record Video
+name: Run Python Scripts and Save Screenshots
 
 on:
   workflow_dispatch:
@@ -26,10 +26,10 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y google-chrome-stable
 
-    # Устанавливаем Xvfb и ffmpeg
-    - name: Install Xvfb and ffmpeg
+    # Устанавливаем Xvfb
+    - name: Install Xvfb
       run: |
-        sudo apt-get install -y xvfb ffmpeg
+        sudo apt-get install -y xvfb
 
     # Устанавливает зависимости (если есть файл requirements.txt)
     - name: Install dependencies
@@ -37,6 +37,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install selenium
         pip install webdriver-manager
+        pip install Pillow  # Для работы с изображениями
 
     # Установить переменные окружения
     - name: Set up environment variables
@@ -51,14 +52,6 @@ jobs:
         Xvfb :99 -screen 0 1920x1080x24 &
         echo "Xvfb started"
 
-    # Запускаем ffmpeg для записи экрана
-    - name: Start screen recording
-      env:
-        DISPLAY: :99  # Используем виртуальный дисплей для захвата
-      run: |
-        ffmpeg -y -video_size 1920x1080 -framerate 25 -f x11grab -i :99.0 -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency screen_record.mp4 &
-        echo $! > ffmpeg_pid.txt
-
     # Запуск Python скрипта с Selenium
     - name: Run Python script
       env:
@@ -66,26 +59,20 @@ jobs:
         PASS_BIRGE: ${{ secrets.PASS_BIRGE }}
       run: python birge.py
 
-    # Останавливает запись после выполнения скрипта
-    - name: Stop recording
+    # Проверяем, что скриншоты были созданы
+    - name: Check screenshots
       run: |
-        kill $(cat ffmpeg_pid.txt)
-        sleep 5  # Даем ffmpeg время на корректное завершение
-
-    # Проверяем, что видео файл существует и имеет ненулевой размер
-    - name: Check video file
-      run: |
-        ls -l screen_record.mp4
-        file_size=$(stat -c%s "screen_record.mp4")
-        if [ $file_size -eq 0 ]; then
-          echo "Error: Video file is empty"
+        screenshot_count=$(ls -1 screenshot_*.png 2>/dev/null | wc -l)
+        echo "Found $screenshot_count screenshots"
+        if [ $screenshot_count -eq 0 ]; then
+          echo "Error: No screenshots were created"
           exit 1
         fi
 
-    # Загружает видео как артефакт
-    - name: Upload video
+    # Загружает скриншоты как артефакт
+    - name: Upload screenshots
       uses: actions/upload-artifact@v3
       with:
-        name: screen_record
-        path: screen_record.mp4
+        name: screenshots
+        path: screenshot_*.png
       if: always()  # Попытка загрузить артефакт даже если предыдущие шаги завершились с ошибкой
