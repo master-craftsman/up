@@ -57,6 +57,7 @@ jobs:
         DISPLAY: :99  # Используем виртуальный дисплей для захвата
       run: |
         ffmpeg -y -video_size 1920x1080 -framerate 25 -f x11grab -i :99.0 -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency screen_record.mp4 &
+        echo $! > ffmpeg_pid.txt
 
     # Запуск Python скрипта с Selenium
     - name: Run Python script
@@ -68,7 +69,18 @@ jobs:
     # Останавливает запись после выполнения скрипта
     - name: Stop recording
       run: |
-        pkill ffmpeg
+        kill $(cat ffmpeg_pid.txt)
+        sleep 5  # Даем ffmpeg время на корректное завершение
+
+    # Проверяем, что видео файл существует и имеет ненулевой размер
+    - name: Check video file
+      run: |
+        ls -l screen_record.mp4
+        file_size=$(stat -c%s "screen_record.mp4")
+        if [ $file_size -eq 0 ]; then
+          echo "Error: Video file is empty"
+          exit 1
+        fi
 
     # Загружает видео как артефакт
     - name: Upload video
@@ -76,3 +88,4 @@ jobs:
       with:
         name: screen_record
         path: screen_record.mp4
+      if: always()  # Попытка загрузить артефакт даже если предыдущие шаги завершились с ошибкой
