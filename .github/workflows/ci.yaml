@@ -3,7 +3,7 @@ name: Run Python Scripts and Save Screenshots
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */4 * * *"  # Запуск каждые 4 часа
+    - cron: "0 */2 * * *"  # Запуск каждые 4 часа
 
 jobs:
   run-scripts:
@@ -20,59 +20,7 @@ jobs:
       with:
         python-version: '3.11.0'
 
-    # Устанавливаем Google Chrome
-    - name: Install Google Chrome
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y google-chrome-stable
-
-    # Устанавливаем Xvfb
-    - name: Install Xvfb
-      run: |
-        sudo apt-get install -y xvfb
-
-    # Устанавливает зависимости (если есть файл requirements.txt)
-    - name: Install dependencies
-      run: |
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        pip install selenium
-        pip install webdriver-manager
-        pip install Pillow  # Для работы с изображениями
-
-    # Установить переменные окружения
-    - name: Set up environment variables
-      run: |
-        export DISPLAY=:99
-
-    # Запускаем Xvfb
-    - name: Start Xvfb
-      env:
-        DISPLAY: :99  # Используем виртуальный дисплей для захвата
-      run: |
-        Xvfb :99 -screen 0 1920x1080x24 &
-        echo "Xvfb started"
-
     # Запуск Python скрипта с Selenium
     - name: Run Python script
-      env:
-        EMAIL_BIRGE: ${{ secrets.EMAIL_BIRGE }}
-        PASS_BIRGE: ${{ secrets.PASS_BIRGE }}
-      run: python birge.py
+      run: python birge_up.py
 
-    # Проверяем, что скриншоты были созданы
-    - name: Check screenshots
-      run: |
-        screenshot_count=$(ls -1 screenshot_*.png 2>/dev/null | wc -l)
-        echo "Found $screenshot_count screenshots"
-        if [ $screenshot_count -eq 0 ]; then
-          echo "Error: No screenshots were created"
-          exit 1
-        fi
-
-    # Загружает скриншоты как артефакт
-    - name: Upload screenshots
-      uses: actions/upload-artifact@v3
-      with:
-        name: screenshots
-        path: screenshot_*.png
-      if: always()  # Попытка загрузить артефакт даже если предыдущие шаги завершились с ошибкой
