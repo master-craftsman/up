@@ -20,6 +20,10 @@ jobs:
       with:
         python-version: '3.11.0'
 
+    # Устанавливаем зависимости из requirements.txt
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
     # Запуск Python скрипта с Selenium
     - name: Run Python script
       run: python birge_up.py
