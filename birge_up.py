@@ -27,7 +27,7 @@ def send_request(value):
         'action': 'update_ads',
         'values': value
     }
-    response = requests.get(url, headers=headers, params=params)
+    response = requests.get(url, headers=headers, params=params, verify=False)
     
     # Проверка статуса запроса и вывод результата
     if response.status_code == 200:
