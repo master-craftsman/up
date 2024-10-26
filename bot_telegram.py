@@ -1,9 +1,13 @@
 import os
+from dotenv import load_dotenv
 import json
 import logging
 import sqlite3
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler, filters
+
+# Загрузка переменных окружения из файла .env
+load_dotenv()
 
 # Получаем значения из переменных окружения
 API_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
