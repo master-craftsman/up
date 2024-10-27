@@ -96,8 +96,10 @@ async def admin_broadcast(update: Update, context: CallbackContext) -> None:
 
     if context.args:
         message_text = ' '.join(context.args)
-        await broadcast_message(context, message_text)
-        await update.message.reply_text("Рассылка выполнена успешно.")
+        # Запрашиваем медиа (изображение или видео) от пользователя
+        await update.message.reply_text("Пожалуйста, отправьте медиа (изображение или видео) для рассылки.")
+        waiting_for_broadcast_text = True
+        context.user_data['message_text'] = message_text  # Сохраняем текст сообщения
     else:
         waiting_for_broadcast_text = True
         await update.message.reply_text("Пожалуйста, отправьте текст для рассылки.")
@@ -108,23 +110,43 @@ async def handle_broadcast_text(update: Update, context: CallbackContext) -> Non
     if user_id not in ADMIN_IDS or not waiting_for_broadcast_text:
         return
 
-    message_text = update.message.text
-    await broadcast_message(context, message_text)
-    await update.message.reply_text("Рассылка выполнена успешно.")
+    # Получаем текст сообщения из user_data
+    message_text = context.user_data.get('message_text', '')
+    media = update.message.photo or update.message.video  # Получаем медиа
+
+    # Отправляем сообщение с кнопкой "Отправить"
+    keyboard = [[InlineKeyboardButton("Отправить", callback_data='confirm_broadcast')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(f"Вы собираетесь отправить:\n{message_text}", reply_markup=reply_markup)
+
+    # Сохраняем медиа для последующей отправки
+    context.user_data['media'] = media
     waiting_for_broadcast_text = False
 
-# Измените функцию broadcast_message, чтобы она принимала текст сообщения:
-async def broadcast_message(context: CallbackContext, message_text: str) -> None:
+async def confirm_broadcast(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    await query.answer()
+
+    # Получаем текст и медиа из user_data
+    message_text = context.user_data.get('message_text', '')
+    media = context.user_data.get('media')
+
+    # Отправляем сообщение всем пользователям
+    await broadcast_message(context, message_text, media)
+    await query.message.reply_text("Рассылка выполнена успешно.")
+
+# Измените функцию broadcast_message, чтобы она принимала медиа:
+async def broadcast_message(context: CallbackContext, message_text: str, media=None) -> None:
     users = get_all_users()
     for user_id in users:
         try:
-            await context.bot.send_message(
-                chat_id=user_id,
-                text=message_text,
-#                reply_markup=InlineKeyboardMarkup(
-#                    [[InlineKeyboardButton("Скачать гайд", url="https://your-link-to-guide.com")]]
- #               )
-            )
+            if media:
+                if media.type == 'photo':
+                    await context.bot.send_photo(chat_id=user_id, photo=media[-1].file_id, caption=message_text)
+                elif media.type == 'video':
+                    await context.bot.send_video(chat_id=user_id, video=media.file_id, caption=message_text)
+            else:
+                await context.bot.send_message(chat_id=user_id, text=message_text)
         except Exception as e:
             logger.error(f"Не удалось отправить сообщение пользователю {user_id}: {e}")
 
