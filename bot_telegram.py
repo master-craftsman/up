@@ -103,9 +103,9 @@ async def execute_broadcast(context: CallbackContext) -> None:
         try:
             if media:
                 if media_type == 'photo':
-                    await context.bot.send_photo(chat_id=user_id, photo=media, caption=message_text)
+                    await context.bot.send_photo(chat_id=user_id, photo=media, caption=message_text or "")
                 elif media_type == 'video':
-                    await context.bot.send_video(chat_id=user_id, video=media, caption=message_text)
+                    await context.bot.send_video(chat_id=user_id, video=media, caption=message_text or "")
             elif message_text:
                 await context.bot.send_message(chat_id=user_id, text=message_text)
             logger.info(f"Сообщение отправлено пользователю {user_id}")
@@ -124,13 +124,18 @@ async def handle_broadcast_text(update: Update, context: CallbackContext) -> Non
     context.user_data['message_text'] = update.message.text
     await update.message.reply_text("Текст для рассылки сохранен. Отправьте медиа, если нужно, или используйте /send_broadcast для отправки.")
 
-# Функция для обработки медиа
+# Функция для обработки медиа с проверкой на наличие текста
 async def handle_broadcast_media(update: Update, context: CallbackContext) -> None:
     global waiting_for_broadcast_content
     user_id = update.effective_user.id
 
     if user_id not in ADMIN_IDS or not waiting_for_broadcast_content:
         return
+
+    # Проверяем, есть ли текст в сообщении с медиа
+    caption = update.message.caption
+    if caption:
+        context.user_data['message_text'] = caption
 
     if update.message.photo:
         context.user_data['media'] = update.message.photo[-1].file_id
@@ -139,7 +144,7 @@ async def handle_broadcast_media(update: Update, context: CallbackContext) -> No
         context.user_data['media'] = update.message.video.file_id
         context.user_data['media_type'] = 'video'
     
-    await update.message.reply_text("Медиа для рассылки сохранено. Отправьте текст, если нужно, или используйте /send_broadcast для отправки.")
+    await update.message.reply_text("Медиа и текст для рассылки сохранены. Используйте /send_broadcast для отправки.")
 
 # Регистрация команд и обработчиков
 application = Application.builder().token(API_TOKEN).build()
