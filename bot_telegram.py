@@ -4,36 +4,27 @@ import json
 import logging
 import sqlite3
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext, MessageHandler, filters as ext_filters
 
 # Загрузка переменных окружения из файла .env
 load_dotenv()
 
-# Получаем значения из переменных окружения
 API_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 ADMIN_IDS = json.loads(os.getenv('ADMIN_IDS', '[]'))
 
-# Проверка наличия токена
 if not API_TOKEN:
     raise ValueError("Не задан токен бота. Установите переменную окружения TELEGRAM_BOT_TOKEN.")
-
-# Проверка наличия админов
 if not ADMIN_IDS:
     logging.warning("Список админов пуст. Установите переменную окружения ADMIN_IDS.")
 
-# Настройка логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Глобальная переменная для отслеживания состояния ожидания текста рассылки
-waiting_for_broadcast_text = False
+waiting_for_broadcast_content = False
 
-# Функция для подключения к базе данных
 def connect_db():
-    conn = sqlite3.connect("users.db")
-    return conn
+    return sqlite3.connect("users.db")
 
-# Функция для создания таблицы пользователей (если она ещё не существует)
 def create_table():
     conn = connect_db()
     cursor = conn.cursor()
@@ -45,7 +36,6 @@ def create_table():
     conn.commit()
     conn.close()
 
-# Функция для добавления нового пользователя
 def add_user(user_id):
     conn = connect_db()
     cursor = conn.cursor()
@@ -53,7 +43,6 @@ def add_user(user_id):
     conn.commit()
     conn.close()
 
-# Функция для получения списка всех пользователей
 def get_all_users():
     conn = connect_db()
     cursor = conn.cursor()
@@ -62,119 +51,105 @@ def get_all_users():
     conn.close()
     return [user[0] for user in users]
 
-# Функция для обработки команды /start
+# Функция для команды /start
 async def start(update: Update, context: CallbackContext) -> None:
-    keyboard = [
-        [InlineKeyboardButton("Получить гайд", callback_data='get_guide')]
-    ]
+    keyboard = [[InlineKeyboardButton("Получить гайд", callback_data='get_guide')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     user_id = update.message.chat_id
-    add_user(user_id)  # Добавляем пользователя в базу днных
+    add_user(user_id)  
     await update.message.reply_text(
-        "Привет! Я бот для оплаты занятий по английскому. Чтобы получить бесплатный гайд, нажми на кнопку ниже!", reply_markup=reply_markup)
+        "Привет! Я бот для оплаты занятий по английскому. Чтобы получить бесплатный гайд, нажми на кнопку ниже!", 
+        reply_markup=reply_markup
+    )
 
-# Функция для обработки команды /get_guide
-async def get_guide(update: Update, context: CallbackContext) -> None:
-    keyboard = [
-        [InlineKeyboardButton("Скачать гайд", url="https://your-link-to-guide.com")]
-    ]
+# Функция для обработки нажатия на кнопку "Получить гайд"
+async def handle_guide_button(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    await query.answer()  # Подтверждаем нажатие на кнопку
+    keyboard = [[InlineKeyboardButton("Скачать гайд", url="https://your-link-to-guide.com")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.edit_message_text("Вот твой бесплатный гайд!", reply_markup=reply_markup)
 
-    # Check if this is a callback query (button press) or a direct command
-    if update.callback_query:
-        await update.callback_query.message.reply_text("Вот твой бесплатный гайд!", reply_markup=reply_markup)
-    else:
-        await update.message.reply_text("Вот твой бесплатный гайд!", reply_markup=reply_markup)
-
-# Добавьте новую функцию для обработки команды /broadcast
+# Команда /broadcast
 async def admin_broadcast(update: Update, context: CallbackContext) -> None:
-    global waiting_for_broadcast_text
+    logger.info("Команда /broadcast вызвана.")
+    user_id = update.effective_user.id
+    if user_id not in ADMIN_IDS:
+        await update.message.reply_text("У вас нет прав для выполнения этой команды.")
+        return
+    
+    global waiting_for_broadcast_content
+    waiting_for_broadcast_content = True
+    await update.message.reply_text("Пожалуйста, укажите текст и/или отправьте медиа для рассылки. После этого используйте /send_broadcast для запуска рассылки.")
+
+# Команда /send_broadcast для выполнения рассылки
+async def send_broadcast(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     if user_id not in ADMIN_IDS:
         await update.message.reply_text("У вас нет прав для выполнения этой команды.")
         return
 
-    if context.args:
-        message_text = ' '.join(context.args)
-        # Запрашиваем медиа (изображение или видео) от пользователя
-        await update.message.reply_text("Пожалуйста, отправьте медиа (изображение или видео) для рассылки.")
-        waiting_for_broadcast_text = True
-        context.user_data['message_text'] = message_text  # Сохраняем текст сообщения
-    else:
-        waiting_for_broadcast_text = True
-        await update.message.reply_text("Пожалуйста, отправьте текст для рассылки.")
+    await execute_broadcast(context)
+    await update.message.reply_text("Рассылка завершена.")
+    context.user_data.clear()  # Очищаем данные после отправки
 
-async def handle_broadcast_text(update: Update, context: CallbackContext) -> None:
-    global waiting_for_broadcast_text
-    user_id = update.effective_user.id
-    if user_id not in ADMIN_IDS or not waiting_for_broadcast_text:
-        return
-
-    # Получаем текст сообщения из user_data
-    message_text = context.user_data.get('message_text', '')
-    media = update.message.photo or update.message.video  # Получаем медиа
-
-    # Отправляем сообщение с кнопкой "Отправить"
-    keyboard = [[InlineKeyboardButton("Отправить", callback_data='confirm_broadcast')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(f"Вы собираетесь отправить:\n{message_text}", reply_markup=reply_markup)
-
-    # Сохраняем медиа для последующей отправки
-    context.user_data['media'] = media
-    waiting_for_broadcast_text = False
-
-async def confirm_broadcast(update: Update, context: CallbackContext) -> None:
-    query = update.callback_query
-    await query.answer()
-
-    # Получаем текст и медиа из user_data
-    message_text = context.user_data.get('message_text', '')
+async def execute_broadcast(context: CallbackContext) -> None:
+    message_text = context.user_data.get('message_text')
     media = context.user_data.get('media')
-
-    # Отправляем сообщение всем пользователям
-    await broadcast_message(context, message_text, media)
-    await query.message.reply_text("Рассылка выполнена успешно.")
-
-# Измените функцию broadcast_message, чтобы она принимала медиа:
-async def broadcast_message(context: CallbackContext, message_text: str, media=None) -> None:
-    users = get_all_users()
-    for user_id in users:
+    media_type = context.user_data.get('media_type')
+    user_ids = get_all_users()
+    
+    for user_id in user_ids:
         try:
             if media:
-                if media.type == 'photo':
-                    await context.bot.send_photo(chat_id=user_id, photo=media[-1].file_id, caption=message_text)
-                elif media.type == 'video':
-                    await context.bot.send_video(chat_id=user_id, video=media.file_id, caption=message_text)
-            else:
+                if media_type == 'photo':
+                    await context.bot.send_photo(chat_id=user_id, photo=media, caption=message_text)
+                elif media_type == 'video':
+                    await context.bot.send_video(chat_id=user_id, video=media, caption=message_text)
+            elif message_text:
                 await context.bot.send_message(chat_id=user_id, text=message_text)
+            logger.info(f"Сообщение отправлено пользователю {user_id}")
         except Exception as e:
             logger.error(f"Не удалось отправить сообщение пользователю {user_id}: {e}")
+    logger.info("Рассылка завершена.")
 
-# Функция для обработки нажатий кнопок
-async def button_callback(update: Update, context: CallbackContext) -> None:
-    query = update.callback_query
-    await query.answer()
+# Функция для обработки текста
+async def handle_broadcast_text(update: Update, context: CallbackContext) -> None:
+    global waiting_for_broadcast_content
+    user_id = update.effective_user.id
 
-    if query.data == 'get_guide':
-        await get_guide(update, context)
+    if user_id not in ADMIN_IDS or not waiting_for_broadcast_content:
+        return
 
-# Основная функция для запуска бота
-def main() -> None:
-    # Создаем таблицу при первом запуске
+    context.user_data['message_text'] = update.message.text
+    await update.message.reply_text("Текст для рассылки сохранен. Отправьте медиа, если нужно, или используйте /send_broadcast для отправки.")
+
+# Функция для обработки медиа
+async def handle_broadcast_media(update: Update, context: CallbackContext) -> None:
+    global waiting_for_broadcast_content
+    user_id = update.effective_user.id
+
+    if user_id not in ADMIN_IDS or not waiting_for_broadcast_content:
+        return
+
+    if update.message.photo:
+        context.user_data['media'] = update.message.photo[-1].file_id
+        context.user_data['media_type'] = 'photo'
+    elif update.message.video:
+        context.user_data['media'] = update.message.video.file_id
+        context.user_data['media_type'] = 'video'
+    
+    await update.message.reply_text("Медиа для рассылки сохранено. Отправьте текст, если нужно, или используйте /send_broadcast для отправки.")
+
+# Регистрация команд и обработчиков
+application = Application.builder().token(API_TOKEN).build()
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CallbackQueryHandler(handle_guide_button, pattern='get_guide'))  # Обработчик нажатий на кнопку
+application.add_handler(CommandHandler("broadcast", admin_broadcast))
+application.add_handler(CommandHandler("send_broadcast", send_broadcast))
+application.add_handler(MessageHandler(ext_filters.TEXT & ext_filters.User(user_id=ADMIN_IDS), handle_broadcast_text))
+application.add_handler(MessageHandler(ext_filters.PHOTO | ext_filters.VIDEO & ext_filters.User(user_id=ADMIN_IDS), handle_broadcast_media))
+
+if __name__ == "__main__":
     create_table()
-
-    # Инициализация бота и диспетчера
-    application = Application.builder().token(API_TOKEN).build()
-
-    # Регистрация обработчиков команд
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("get_guide", get_guide))
-    application.add_handler(CallbackQueryHandler(button_callback))  # Добавляем обработчик для кнопок
-    application.add_handler(CommandHandler("broadcast", admin_broadcast))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_broadcast_text))
-
-    # Запуск бота
     application.run_polling()
-
-if __name__ == '__main__':
-    main()
