@@ -66,7 +66,7 @@ async def start(update: Update, context: CallbackContext) -> None:
 async def handle_guide_button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     await query.answer()  # Подтверждаем нажатие на кнопку
-    keyboard = [[InlineKeyboardButton("Скачать гайд", url="https://your-link-to-guide.com")]]
+    keyboard = [[InlineKeyboardButton("Скачать гайд", url="https://discovered-bassoon-2bf.notion.site/20-08637e6a6b0b4e0696e3ca5f2892f553?pvs=4")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await query.edit_message_text("Вот твой бесплатный гайд!", reply_markup=reply_markup)
 
@@ -80,6 +80,7 @@ async def admin_broadcast(update: Update, context: CallbackContext) -> None:
     
     global waiting_for_broadcast_content
     waiting_for_broadcast_content = True
+    context.user_data.clear()  # Очищаем данные перед новой рассылкой
     await update.message.reply_text("Пожалуйста, укажите текст и/или отправьте медиа для рассылки. После этого используйте /send_broadcast для запуска рассылки.")
 
 # Команда /send_broadcast для выполнения рассылки
@@ -94,23 +95,32 @@ async def send_broadcast(update: Update, context: CallbackContext) -> None:
     context.user_data.clear()  # Очищаем данные после отправки
 
 async def execute_broadcast(context: CallbackContext) -> None:
-    message_text = context.user_data.get('message_text')
-    media = context.user_data.get('media')
-    media_type = context.user_data.get('media_type')
     user_ids = get_all_users()
     
+    # Получаем текст и медиа из user_data
+    messages_to_send = context.user_data.get('messages_to_send', [])
+
     for user_id in user_ids:
-        try:
-            if media:
-                if media_type == 'photo':
-                    await context.bot.send_photo(chat_id=user_id, photo=media, caption=message_text or "")
-                elif media_type == 'video':
-                    await context.bot.send_video(chat_id=user_id, video=media, caption=message_text or "")
-            elif message_text:
-                await context.bot.send_message(chat_id=user_id, text=message_text)
-            logger.info(f"Сообщение отправлено пользователю {user_id}")
-        except Exception as e:
-            logger.error(f"Не удалось отправить сообщение пользователю {user_id}: {e}")
+        for message in messages_to_send:
+            media = message.get('media', [])
+            text = message.get('text', '')
+
+            try:
+                # Отправка медиа и текста
+                if media:
+                    for media_item in media:
+                        media_type = media_item.get('type')
+                        media_file_id = media_item.get('file_id')
+                        if media_type == 'photo':
+                            await context.bot.send_photo(chat_id=user_id, photo=media_file_id, caption=text or "")
+                        elif media_type == 'video':
+                            await context.bot.send_video(chat_id=user_id, video=media_file_id, caption=text or "")
+                elif text:
+                    await context.bot.send_message(chat_id=user_id, text=text)
+                
+                logger.info(f"Сообщение отправлено пользователю {user_id}")
+            except Exception as e:
+                logger.error(f"Не удалось отправить сообщение пользователю {user_id}: {e}")
     logger.info("Рассылка завершена.")
 
 # Функция для обработки текста
@@ -121,7 +131,8 @@ async def handle_broadcast_text(update: Update, context: CallbackContext) -> Non
     if user_id not in ADMIN_IDS or not waiting_for_broadcast_content:
         return
 
-    context.user_data['message_text'] = update.message.text
+    # Сохраняем текст для рассылки
+    context.user_data.setdefault('messages_to_send', []).append({'text': update.message.text, 'media': []})
     await update.message.reply_text("Текст для рассылки сохранен. Отправьте медиа, если нужно, или используйте /send_broadcast для отправки.")
 
 # Функция для обработки медиа с проверкой на наличие текста
@@ -134,16 +145,23 @@ async def handle_broadcast_media(update: Update, context: CallbackContext) -> No
 
     # Проверяем, есть ли текст в сообщении с медиа
     caption = update.message.caption
-    if caption:
-        context.user_data['message_text'] = caption
+    media_type = None
+    media_file_id = None
 
     if update.message.photo:
-        context.user_data['media'] = update.message.photo[-1].file_id
-        context.user_data['media_type'] = 'photo'
+        media_file_id = update.message.photo[-1].file_id
+        media_type = 'photo'
     elif update.message.video:
-        context.user_data['media'] = update.message.video.file_id
-        context.user_data['media_type'] = 'video'
+        media_file_id = update.message.video.file_id
+        media_type = 'video'
     
+    # Сохраняем медиа в списке сообщений для рассылки
+    if media_file_id and media_type:
+        last_message = context.user_data.setdefault('messages_to_send', []).append({
+            'text': caption or '',
+            'media': [{'file_id': media_file_id, 'type': media_type}]
+        })
+
     await update.message.reply_text("Медиа и текст для рассылки сохранены. Используйте /send_broadcast для отправки.")
 
 # Регистрация команд и обработчиков
