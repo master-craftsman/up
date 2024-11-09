@@ -53,12 +53,12 @@ def get_all_users():
 
 # Функция для команды /start
 async def start(update: Update, context: CallbackContext) -> None:
-    keyboard = [[InlineKeyboardButton("Получить гайд", callback_data='get_guide')]]
+    keyboard = [[InlineKeyboardButton("Выбрать подарок", callback_data='get_guide')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     user_id = update.message.chat_id
     add_user(user_id)  
     await update.message.reply_text(
-        "Привет! Я бот для оплаты занятий по английскому. Чтобы получить бесплатный гайд, нажми на кнопку ниже!", 
+        "Привет!\nСпасибо за подписку 🤍\n\nЛюбой из подарков вы можете забрать по кнопке ниже БЕСПЛАТНО 👇",
         reply_markup=reply_markup
     )
 
@@ -66,9 +66,13 @@ async def start(update: Update, context: CallbackContext) -> None:
 async def handle_guide_button(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     await query.answer()  # Подтверждаем нажатие на кнопку
-    keyboard = [[InlineKeyboardButton("Скачать гайд", url="https://discovered-bassoon-2bf.notion.site/20-08637e6a6b0b4e0696e3ca5f2892f553?pvs=4")]]
+    keyboard = [
+        [InlineKeyboardButton("12 самых типичных ошибок русскоговорящих в английском", url="https://discovered-bassoon-2bf.notion.site/12-08637e6a6b0b4e0696e3ca5f2892f553?pvs=4")],
+        [InlineKeyboardButton("120+ сокращений в английском языке", url="https://drive.google.com/file/d/1PG3L2hmUnyuvoOQ9SC0E5IDfSz6oa_QW/view?usp=sharing")],
+        [InlineKeyboardButton("Ресурсы и приложения для прокачки английского", url="https://discovered-bassoon-2bf.notion.site/cbef9b46bd094bc183a8afbdc937bf4b?pvs=4")],
+    ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text("Вот твой бесплатный гайд!", reply_markup=reply_markup)
+    await query.edit_message_text("Привет!\nСпасибо за подписку 🤍\n\nЛюбой из подарков вы можете забрать по кнопке ниже БЕСПЛАТНО 👇", reply_markup=reply_markup)
 
 # Команда /broadcast
 async def admin_broadcast(update: Update, context: CallbackContext) -> None:
